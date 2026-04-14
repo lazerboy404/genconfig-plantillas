@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Configuración de Routers</title>
+    <link rel="stylesheet" href="./styles.css">
+    <script src="./jszip.min.js" defer></script>
+    <script src="./app.js" defer></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title-brand">
+                <span class="icon icon-title" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" focusable="false">
+                        <path d="M4 7.5A2.5 2.5 0 0 1 6.5 5h11A2.5 2.5 0 0 1 20 7.5v2A2.5 2.5 0 0 1 17.5 12h-11A2.5 2.5 0 0 1 4 9.5zm2.5-1a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1zm0 5.5h11A2.5 2.5 0 0 1 20 14.5v2a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5v-2A2.5 2.5 0 0 1 6.5 12zm0 1.5a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1zM8 8.25a.75.75 0 1 1 0 1.5a.75.75 0 0 1 0-1.5m0 7a.75.75 0 1 1 0 1.5a.75.75 0 0 1 0-1.5m3.25-7h5.5a.75.75 0 0 1 0 1.5h-5.5a.75.75 0 0 1 0-1.5m0 7h5.5a.75.75 0 0 1 0 1.5h-5.5a.75.75 0 0 1 0-1.5"/>
+                    </svg>
+                </span>
+                <span>GenConfig</span>
+            </h1>
+            <p>Generador de plantillas</p>
+        </div>
+
+        <form id="config-form">
+            <div class="form-group">
+                <label>1. Configuracion General:</label>
+                <div class="field-row">
+                    <div class="field-block">
+                        <label for="modelo" class="sub-label">Modelo:</label>
+                        <select id="modelo" class="form-control" required>
+                            <option value="" selected disabled>Selecciona modelo</option>
+                            <option value="Huawei">Huawei</option>
+                            <option value="Cisco">Cisco</option>
+                        </select>
+                    </div>
+                    <div class="field-block">
+                        <label for="c2" class="sub-label">C2:</label>
+                        <select id="c2" class="form-control" required>
+                            <option value="" selected disabled>Selecciona C2</option>
+                            <option value="Sur">Sur</option>
+                            <option value="Norte">Norte</option>
+                            <option value="Poniente">Poniente</option>
+                            <option value="Oriente">Oriente</option>
+                            <option value="Centro">Centro</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="id_tmx">2. ID:</label>
+                <div class="autocomplete">
+                    <input type="text" id="id_tmx" class="form-control" placeholder="Ej: 123456" autocomplete="off">
+                    <div id="id-suggestions" class="autocomplete-list hidden"></div>
+                </div>
+                <div id="id-feedback" class="field-feedback hidden"></div>
+            </div>
+
+            <button type="submit" id="submit-btn" class="btn" disabled>
+                <span class="btn-text">
+                    <span class="icon icon-inline" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" focusable="false">
+                            <path d="M19 3h-4.18A3 3 0 0 0 12 1H8a3 3 0 0 0-2.82 2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10l6-6V5a2 2 0 0 0-2-2M8 3h4a1 1 0 0 1 0 2H8a1 1 0 0 1 0-2m5 16v-5h5zm6-7h-6a2 2 0 0 0-2 2v5H5V5h14z"/>
+                        </svg>
+                    </span>
+                    <span class="btn-label">Generar plantilla</span>
+                </span>
+                <div class="spinner"></div>
+            </button>
+
+            <div id="status-message" class="status-box"></div>
+
+            <div id="data-issues" class="issues-panel hidden">
+                <h3>Revision de datos</h3>
+                <ul id="data-issues-list"></ul>
+            </div>
+
+            <hr class="separator">
+
+            <button type="button" id="toggle-mass" class="btn-toggle">
+                <span class="btn-toggle-label">
+                    <span class="icon icon-inline" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" focusable="false">
+                            <path d="M10.33 2.75a1 1 0 0 1 1.94 0l.22 1.42a7.98 7.98 0 0 1 1.83.76l1.18-.83a1 1 0 0 1 1.26.1l1.38 1.38a1 1 0 0 1 .1 1.26l-.83 1.18c.32.58.57 1.19.76 1.83l1.42.22a1 1 0 0 1 .84.99v1.94a1 1 0 0 1-.84.99l-1.42.22a7.98 7.98 0 0 1-.76 1.83l.83 1.18a1 1 0 0 1-.1 1.26l-1.38 1.38a1 1 0 0 1-1.26.1l-1.18-.83a7.98 7.98 0 0 1-1.83.76l-.22 1.42a1 1 0 0 1-.99.84h-1.94a1 1 0 0 1-.99-.84l-.22-1.42a7.98 7.98 0 0 1-1.83-.76l-1.18.83a1 1 0 0 1-1.26-.1L3.9 18.28a1 1 0 0 1-.1-1.26l.83-1.18a7.98 7.98 0 0 1-.76-1.83l-1.42-.22a1 1 0 0 1-.84-.99v-1.94a1 1 0 0 1 .84-.99l1.42-.22c.19-.64.44-1.25.76-1.83l-.83-1.18a1 1 0 0 1 .1-1.26L5.28 4.2a1 1 0 0 1 1.26-.1l1.18.83c.58-.32 1.19-.57 1.83-.76zM11.3 8.25a3.75 3.75 0 1 0 0 7.5a3.75 3.75 0 0 0 0-7.5"/>
+                        </svg>
+                    </span>
+                    <span>Opciones Masivas / Avanzadas</span>
+                </span>
+                <span id="arrow-icon" class="arrow-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" focusable="false">
+                        <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6l-6-6z"/>
+                    </svg>
+                </span>
+            </button>
+
+            <div id="mass-panel" class="mass-panel">
+                <div class="mass-title">
+                    <span class="icon icon-inline" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" focusable="false">
+                            <path d="M13 2L4 14h6l-1 8l9-12h-6z"/>
+                        </svg>
+                    </span>
+                    <span>Modo Masivo Por IDs (ZIP)</span>
+                </div>
+                <p class="mass-instructions">
+                    1. Selecciona arriba el Modelo y el C2.<br>
+                    2. Pega varios ID_TMX abajo.<br>
+                    3. Se generara un ZIP con una plantilla por cada ID usando ese mismo C2.
+                </p>
+
+                <div class="form-group">
+                    <textarea id="lista-ids" class="form-control" placeholder="Pega aqui los ID_TMX. Acepta comas, tabulaciones, espacios y saltos de linea desde Excel."></textarea>
+                </div>
+
+                <p id="mass-summary" class="helper-text">Aun no has pegado IDs.</p>
+                <p id="mass-detail" class="helper-text">Acepta IDs separados por comas, espacios, saltos de linea o pegado desde Excel.</p>
+
+                <div class="btn-mass-group">
+                    <button type="button" id="btn-lista" class="btn btn-secondary">
+                        <span class="icon icon-inline" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" focusable="false">
+                                <path d="M20 8h-3.18A3 3 0 0 0 14 4H10a3 3 0 0 0-2.82 4H4a1 1 0 0 0-1 1v3a2 2 0 0 0 2 2v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4a2 2 0 0 0 2-2V9a1 1 0 0 0-1-1m-10-2h4a1.5 1.5 0 0 1 0 3h-4a1.5 1.5 0 0 1 0-3m7 12H7v-4h10zm2-6H5V10h14z"/>
+                            </svg>
+                        </span>
+                        <span>Generar ZIP por IDs</span>
+                    </button>
+                    <button type="button" id="btn-limpiar" class="btn btn-secondary btn-outline">
+                        <span class="icon icon-inline" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" focusable="false">
+                                <path d="M15 4V3a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v1H5v2h1l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13h1V4zm-4-1h2v1h-2zm4 16H9L8 6h8z"/>
+                            </svg>
+                        </span>
+                        <span>Limpiar Lista</span>
+                    </button>
+                </div>
+
+                <div id="mass-progress" class="progress">
+                    <div id="mass-progress-bar" class="progress-bar"></div>
+                </div>
+                <p id="mass-progress-text" class="progress-text"></p>
+
+                <div id="status-mass" class="status-box"></div>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

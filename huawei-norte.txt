@@ -1,0 +1,437 @@
+[V200R009C00SPC500]
+#
+ sysname SSP_STV_«ID_TMX»
+#
+ drop illegal-mac alarm
+#
+ clock timezone CST minus 6
+#
+vlan batch 1
+#
+stp edged-port default
+#
+qos overhead layer link
+#
+authentication-profile name default_authen_profile
+authentication-profile name dot1x_authen_profile
+authentication-profile name mac_authen_profile
+authentication-profile name portal_authen_profile
+authentication-profile name dot1xmac_authen_profile
+authentication-profile name multi_authen_profile
+#
+ digital port 0 output status low
+ undo digital input trap enable
+#
+dhcp enable
+#
+radius-server template default
+#
+bfd
+#
+pki realm default
+#
+ssl policy default_policy type server
+ pki-realm default
+ version tls1.0 tls1.1
+ ciphersuite rsa_aes_128_cbc_sha
+#
+acl name PTZ-CSIG-ANPR 3989
+ rule 5 permit tcp destination-port eq www
+ rule 10 permit tcp destination-port eq 1720
+ rule 15 permit tcp destination-port range 5555 5574
+ rule 20 permit udp destination-port eq 1719
+ rule 25 permit udp source-port range 2326 2485
+ rule 30 permit udp destination-port range 2326 2485
+acl name mgmt 3990
+ rule 5 permit tcp destination-port eq telnet
+ rule 10 permit tcp destination-port eq 22
+ rule 15 permit udp source-port eq snmp
+ rule 20 permit udp destination-port eq ntp
+ rule 25 permit udp destination-port eq syslog
+acl name rtps 3991
+ rule 5 permit tcp source-port eq 554
+ rule 10 permit tcp destination-port eq 554
+ rule 15 permit udp source-port eq 554
+ rule 20 permit udp destination-port eq 554
+acl name fs2_ptz_samsung 3992
+ rule 5 permit tcp source-port eq 4520
+ rule 10 permit tcp destination-port eq 4520
+acl name fs1_ptz_samsung 3993
+ rule 5 permit tcp source-port range 60000 60001
+ rule 10 permit tcp destination-port range 60000 60001
+acl name pelco 3994
+ rule 5 permit udp source-port range 6700 6701
+ rule 10 permit udp destination-port range 6700 6701
+acl name samsung 3995
+ rule 5 permit tcp source-port eq 60002
+ rule 10 permit tcp destination-port eq 60002
+acl name anpr 3996
+ rule 5 permit tcp source-port range 1000 1001
+ rule 10 permit tcp destination-port range 1000 1001
+acl name MARK-CAMARA 3997
+ rule 5 permit ip source «IP_CAM» 0 destination 10.23.0.0 0.0.255.255
+acl name MARK-INTERCOM 3998
+ rule 5 permit ip source «IP_INT» 0
+#
+ike proposal default
+ encryption-algorithm aes-256
+ dh group14
+ authentication-algorithm sha2-256
+ authentication-method pre-share
+ integrity-algorithm hmac-sha2-256
+ prf hmac-sha2-256
+#
+drop-profile QoS
+ wred dscp
+#
+traffic classifier ce.mt operator or
+ if-match dscp cs6
+traffic classifier MANAGEMENT_Y_ROUTING operator or
+ if-match acl mgmt
+traffic classifier ce.cd operator or
+ if-match dscp af31
+traffic classifier ce.rt operator or
+ if-match dscp ef
+traffic classifier ce.bs operator or
+ if-match dscp af23
+traffic classifier INTERCOM operator or
+ if-match acl MARK-INTERCOM
+traffic classifier PTZ-CSIG-ANPR operator or
+ if-match acl fs1_ptz_samsung
+ if-match acl fs2_ptz_samsung
+ if-match acl anpr
+ if-match acl PTZ-CSIG-ANPR
+traffic classifier ce.vd operator or
+ if-match dscp af41
+traffic classifier CAMARA_VIDEO operator or
+ if-match acl samsung
+ if-match acl pelco
+ if-match acl rtps
+ if-match acl MARK-CAMARA
+#
+traffic behavior eth.policing.in
+ gts cir 20000 cbs 500000 
+ traffic-policy rpvm.ce.cdsg.in
+ statistic enable
+traffic behavior eth.shaping.out
+ gts cir 20000 cbs 500000
+ traffic-policy rpvm.ce.cdsg.out
+ statistic enable
+traffic behavior ce.mt_out
+ queue af bandwidth pct 1
+ drop-profile QoS
+ remark 8021p 2
+ statistic enable
+traffic behavior ce.cd_out
+ queue af bandwidth pct 10
+ drop-profile QoS
+ remark 8021p 2
+ statistic enable
+traffic behavior ce.vd_in
+ car cir pct 97 mode color-blind green pass yellow pass red discard
+ statistic enable
+traffic behavior ce.rt_out
+ queue ef bandwidth pct 3
+ remark 8021p 5
+ statistic enable
+traffic behavior ce.bs_out
+ queue af bandwidth pct 5
+ drop-profile QoS
+ remark 8021p 2
+ statistic enable
+traffic behavior mark.af31
+ remark dscp af31
+traffic behavior mark.af41
+ remark dscp af41
+traffic behavior ce.vd_out
+ queue af bandwidth pct 80
+ drop-profile QoS
+ remark 8021p 2
+ statistic enable
+traffic behavior ce.mt_in
+ car cir pct 5 mode color-blind green pass yellow pass red pass
+ statistic enable
+traffic behavior ce.cd_in
+ car cir pct 15 mode color-blind green pass yellow pass red discard
+ statistic enable
+traffic behavior ce.default_out
+ queue af bandwidth pct 1
+ drop-profile QoS
+ remark 8021p 1
+ statistic enable
+traffic behavior ce.default_in
+ car cir pct 5 mode color-blind green pass yellow pass red pass
+ statistic enable
+traffic behavior ce.rt_in
+ car cir pct 3 mode color-blind green pass yellow pass red discard
+ statistic enable
+traffic behavior mark.ef
+ remark dscp ef
+traffic behavior ce.bs_in
+ car cir pct 10 mode color-blind green pass yellow pass red pass
+ statistic enable
+traffic behavior mark.cs6
+ remark dscp cs6
+traffic behavior mark.default
+ remark dscp default
+#
+traffic policy rpvm.ce.cdsg.out
+ classifier ce.mt behavior ce.mt_out precedence 5
+ classifier ce.rt behavior ce.rt_out precedence 10
+ classifier ce.vd behavior ce.vd_out precedence 15
+ classifier ce.cd behavior ce.cd_out precedence 20
+ classifier ce.bs behavior ce.bs_out precedence 25
+ classifier default-class behavior ce.default_out precedence 30
+traffic policy rpvm.ce.cdsg.in
+ classifier ce.mt behavior ce.mt_in precedence 5
+ classifier ce.rt behavior ce.rt_in precedence 10
+ classifier ce.vd behavior ce.vd_in precedence 15
+ classifier ce.cd behavior ce.cd_in precedence 20
+ classifier ce.bs behavior ce.bs_in precedence 25
+ classifier default-class behavior ce.default_in precedence 30
+traffic policy eth.shaping.out
+ classifier default-class behavior eth.shaping.out precedence 5
+traffic policy pb.cdsg.lan
+ classifier INTERCOM behavior mark.ef precedence 5
+ classifier CAMARA_VIDEO behavior mark.af41 precedence 10
+ classifier PTZ-CSIG-ANPR behavior mark.af31 precedence 15
+ classifier MANAGEMENT_Y_ROUTING behavior mark.cs6 precedence 20
+ classifier default-class behavior mark.default precedence 25
+traffic policy eth.policing.in
+ classifier default-class behavior eth.policing.in 
+#
+free-rule-template name default_free_rule
+#
+portal-access-profile name portal_access_profile
+#
+aaa
+ authentication-scheme default
+ authentication-scheme radius
+  authentication-mode radius
+ authorization-scheme default
+ accounting-scheme default
+ domain default
+  authentication-scheme default
+ domain default_admin
+  authentication-scheme default
+ undo local-user admin
+ local-user nocpv password irreversible-cipher m0n1t0r30
+ local-user nocpv privilege level 15
+ local-user nocpv service-type telnet terminal ssh ftp x25-pad http
+ local-user casmto password irreversible-cipher c4smt0
+ local-user casmto privilege level 15
+ local-user casmto service-type telnet terminal ssh ftp x25-pad http
+ local-user reduno password irreversible-cipher b1c3nt3n4r10
+ local-user reduno privilege level 15
+ local-user reduno service-type telnet terminal ssh ftp x25-pad http
+ local-user NOC.CDSe6cD3x password irreversible-cipher CdSe6CDMXW1f1#
+ local-user NOC.CDSe6cD3x privilege level 15
+ local-user NOC.CDSe6cD3x service-type telnet terminal ssh ftp x25-pad http 
+#
+web
+#
+firewall zone Local
+#
+interface Vlanif1
+ description CONEXION CON SERVICIOS LAN
+ ip address «DIR_IP_DG» 255.255.255.240
+ traffic-policy pb.cdsg.lan inbound
+ traffic-policy eth.policing.in outbound
+#
+interface GigabitEthernet0/0/0
+ description MGMT
+ port link-type access
+ port default vlan 1
+#
+interface GigabitEthernet0/0/1
+ description CONEXION CON CAMARA
+ port link-type access
+ port default vlan 1
+#
+interface GigabitEthernet0/0/2
+ description CONEXION CON BOTON
+ port link-type access
+ port default vlan 1
+#
+interface GigabitEthernet0/0/3
+ description CONEXION CON UPS
+ port link-type access
+ port default vlan 1
+#
+interface GigabitEthernet0/0/4
+ description CONEXION CON ALTAVOZ 1
+ port link-type access
+ port default vlan 1
+#
+interface GigabitEthernet0/0/5
+ description CONEXION CON ALTAVOZ 2
+ port link-type access
+ port default vlan 1
+#
+interface GigabitEthernet0/0/6
+ description CONEXION CON CAMARA 4K
+ port link-type access
+ port default vlan 1
+#
+interface GigabitEthernet0/0/7
+ description CONEXION CON DDE_CE
+ undo portswitch
+ combo-port copper  
+ bandwidth 20
+ undo negotiation auto
+#
+interface GigabitEthernet0/0/7.1
+ description CONEXION CON C2_TRABAJO.REF:«REFERENCIA_TRABAJO»_CNOC
+ bandwidth 20
+ dot1q termination vid «VLAN_T»
+ ip address «DIRECCION_IP_VLAN_T» 255.255.255.252
+ traffic-policy eth.shaping.out outbound
+ statistic enable inbound
+ statistic enable outbound
+#
+interface GigabitEthernet0/0/7.2
+description CONEXION CON C2_RESPALDO.REF:«REFERENCIA_RESPALDO»_CNOC
+ bandwidth 20
+ dot1q termination vid «VLAN_R»
+ ip address «DIRECCION_IP_VLAN_R» 255.255.255.252
+ traffic-policy eth.shaping.out outbound
+ statistic enable inbound
+ statistic enable outbound
+#
+interface GigabitEthernet0/0/8
+ port link-type access
+ port default vlan 1
+#
+interface GigabitEthernet0/0/9
+ port link-type access
+ port default vlan 1
+#
+interface NULL0
+#
+interface LoopBack0
+ description MONITOREO
+ ip address «DIR_LB0» 255.255.255.255
+ #
+interface LoopBack100
+ description MONITOREO_TMX
+ ip address «DIRECCION_LOOPBACK_100» 255.255.255.255
+#
+bgp 65194
+ peer «IP_ENLACE_RESPALDO_TELMEX» as-number 8151
+ peer «IP_ENLACE_RESPALDO_TELMEX» bfd min-tx-interval 999 min-rx-interval 999
+ peer «IP_ENLACE_RESPALDO_TELMEX» bfd enable
+ peer «IP_ENLACE_TRABAJO_TELMEX» as-number 8151
+ peer «IP_ENLACE_TRABAJO_TELMEX» bfd min-tx-interval 999 min-rx-interval 999
+ peer «IP_ENLACE_TRABAJO_TELMEX» bfd enable
+ #
+ ipv4-family unicast
+  undo synchronization
+  preference 20 200 200
+  network «DIRECCION_IPLAN» 255.255.255.240
+  network «DIR_LB0» 255.255.255.255
+  network «DIRECCION_LOOPBACK_100» 255.255.255.255
+  peer «IP_ENLACE_RESPALDO_TELMEX» enable
+  peer «IP_ENLACE_RESPALDO_TELMEX» as-path-filter 10 export
+  peer «IP_ENLACE_RESPALDO_TELMEX» route-policy C2.PROCESAMIENTO import
+  peer «IP_ENLACE_RESPALDO_TELMEX» route-policy TELMEX2 export
+  peer «IP_ENLACE_RESPALDO_TELMEX» advertise-community
+  peer «IP_ENLACE_TRABAJO_TELMEX» enable
+  peer «IP_ENLACE_TRABAJO_TELMEX» as-path-filter 10 export
+  peer «IP_ENLACE_TRABAJO_TELMEX» route-policy C2.PROCESAMIENTO import
+  peer «IP_ENLACE_TRABAJO_TELMEX» route-policy TELMEX export
+  peer «IP_ENLACE_TRABAJO_TELMEX» advertise-community
+#
+route-policy TELMEX permit node 10
+ if-match ip-prefix PRIMARIAS
+ apply community 8151:285
+#
+route-policy C2.PROCESAMIENTO permit node 10
+ if-match ip-prefix C2.PROCESAMIENTO
+ apply local-preference 98
+#
+route-policy TELMEX2 permit node 10
+ if-match ip-prefix SECUNDARIAS
+ apply community 8151:286
+#
+ ftp server enable
+ set default ftp-directory flash:
+#
+ snmp-agent complexity-check disable  
+ snmp-agent community write bicentssp
+ snmp-agent sys-info version v2c v3
+ snmp-agent sys-info contact C5CDMX
+ snmp-agent sys-info location CDMX
+ snmp-agent group v3 cdsegura privacy read-view iso-view write-view iso-view notify-view iso-view 
+ snmp-agent mib-view iso-view include iso
+ snmp-agent usm-user v3 bicentssp
+ snmp-agent usm-user v3 bicentssp group cdsegura
+ snmp-agent usm-user v3 bicentssp authentication-mode sha CdSe6W1Fi-cn0C# 
+ snmp-agent usm-user v3 bicentssp privacy-mode aes128 cdSe6W1Fi-cn0C# 
+ snmp-agent target-host trap-paramsname c5 v2c securityname bicentssp
+ snmp-agent target-host trap-hostname c5nms address 10.23.7.133 trap-paramsname c5
+ snmp-agent trap enable
+ snmp-agent trap source vlanif 1																	 
+ snmp-agent
+#
+ sftp server enable
+ stelnet server enable
+ telnet server enable
+#
+ set web login-style simple
+ http secure-server ssl-policy default_policy
+ http server enable
+ http secure-server enable
+ http server permit interface Vlanif1
+#
+ip ip-prefix C2.PROCESAMIENTO index 5 permit 10.23.0.0 16
+ip ip-prefix C2.PROCESAMIENTO index 10 permit 201.134.58.240 28
+ip ip-prefix C2.PROCESAMIENTO index 12 permit 201.134.236.160 27
+ip ip-prefix C2.PROCESAMIENTO index 15 permit 10.100.78.8 30 less-equal 32
+ip ip-prefix C2.PROCESAMIENTO index 20 permit 10.100.78.4 30 less-equal 32
+ip ip-prefix C2.PROCESAMIENTO index 25 permit 10.100.76.16 30 less-equal 32
+ip ip-prefix C2.PROCESAMIENTO index 30 permit 10.100.76.12 30 less-equal 32
+ip ip-prefix C2.PROCESAMIENTO index 35 permit 10.20.0.0 16
+ip ip-prefix C2.PROCESAMIENTO index 40 permit 10.199.1.242 32
+ip ip-prefix C2.PROCESAMIENTO index 45 permit 10.199.1.245 32
+ip ip-prefix PRIMARIAS index 10 permit «DIRECCION_IPLAN» 28
+ip ip-prefix PRIMARIAS index 20 permit «DIR_LB0» 32
+ip ip-prefix PRIMARIAS index 30 permit «DIRECCION_LOOPBACK_100» 32
+ip ip-prefix SECUNDARIAS index 10 permit «DIRECCION_IPLAN» 28
+ip ip-prefix SECUNDARIAS index 20 permit «DIR_LB0» 32
+ip ip-prefix SECUNDARIAS index 30 permit «DIRECCION_LOOPBACK_100» 32
+#
+ip as-path-filter 10 permit ^$
+#
+ip route-static default-preference 1
+#
+user-interface con 0
+ authentication-mode aaa
+user-interface tty 1
+ shell
+user-interface tty 2
+ shell
+ socket-transport enable
+user-interface tty 3
+user-interface vty 0
+ authentication-mode aaa
+ user privilege level 15
+ idle-timeout 20 0
+user-interface vty 1 4
+ authentication-mode aaa
+ idle-timeout 20 0
+#
+dot1x-access-profile name dot1x_access_profile
+#
+ip nqa-compatible responder enable
+ip nqa-compatible auto 
+#
+mac-access-profile name mac_access_profile
+#
+ ntp-service source-interface vlanif 1
+ ntp-service unicast-server 10.23.6.1 preference
+#
+autostart
+#
+secelog
+#
+return

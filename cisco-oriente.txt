@@ -1,0 +1,285 @@
+﻿!
+hostname SSP_STV_«ID_TMX»
+!
+logging buffered 100000 informational 
+no ip domain-lookup
+!
+no aaa new-model
+clock timezone CST -6
+!
+ip nbar custom ptz_01 tcp 4520
+!
+spanning-tree portfast bpduguard
+!
+username caepccm privilege 7 password 7 0508525C314F4D04
+username nocpv privilege 15 secret 5 $1$O3FY$Ig30dE6hs8GPEIWGAWFyZ0 
+username casmto privilege 15 secret 5 $1$gWO1$dwVjq3YDfQg8cS8Smi5y3/ 
+username reduno privilege 15 secret 5 $1$28aP$I/LUjwvdSMTbt5QnrlHHj0
+!
+ip ssh version 2
+!
+class-map match-any INTERCOM
+match access-group name MARK-INTERCOM 
+class-map match-any CAMARA_VIDEO
+match protocol rtsp
+match access-group name MARK-CAMARA 
+class-map match-any MANAGEMENT_Y_ROUTING
+match protocol snmp 
+match protocol syslog 
+match protocol ntp 
+match protocol telnet 
+match protocol ssh
+class-map match-any PTZ_Y_CSIG 
+match protocol ptz_01
+!
+policy-map pb.cdsg.lan 
+class INTERCOM
+set dscp ef
+class CAMARA_VIDEO 
+set ip dscp af41
+class PTZ_Y_CSIG 
+set ip dscp af31
+class MANAGEMENT_Y_ROUTING
+set ip dscp cs6 
+class class-default
+set dscp default
+!
+interface Vlan1
+description CONEXION CON SERVICIOS LAN
+ip address «DIR_IP_DG» 255.255.255.240
+ip nbar protocol-discovery
+service-policy input pb.cdsg.lan
+no shut
+!
+class-map match-any ce.mt 
+match ip dscp cs6
+match protocol snmp 
+match protocol syslog 
+match protocol ntp 
+match protocol telnet 
+match protocol ssh
+class-map match-any ce.vd 
+match ip dscp af41
+class-map match-any ce.bs 
+match ip dscp cs1
+match ip dscp af21 
+match ip dscp af22 
+match ip dscp af23
+class-map match-any ce.cd 
+match ip dscp af31
+class-map match-any ce.rt 
+match ip dscp ef
+!
+policy-map rpvm.ce.cdsg.in 
+class ce.mt
+police cir percent 5 conform-action transmit exceed-action transmit 
+class ce.rt
+police cir percent 3 conform-action transmit exceed-action drop 
+class ce.vd
+police cir percent 97 conform-action transmit exceed-action drop 
+class ce.cd
+police cir percent 15 conform-action transmit exceed-action transmit 
+class ce.bs
+police cir percent 10 conform-action transmit exceed-action transmit 
+class class-default
+police cir percent 5 conform-action transmit exceed-action transmit
+!
+policy-map eth.policing.in 
+class class-default
+police cir 20000000 bc 1000000 be 1000000
+conform-action transmit 
+exceed-action transmit
+service-policy rpvm.ce.cdsg.in
+policy-map rpvm.ce.cdsg.out 
+class ce.mt
+set cos 2
+bandwidth percent 1 
+class ce.rt
+priority percent 3
+set cos 5
+police cir percent 3 
+conform-action transmit 
+exceed-action drop
+class  ce.cd 
+bandwidth percent 10
+set cos 2 
+class ce.vd
+bandwidth percent 80
+set cos 2 
+class ce.bs
+bandwidth percent 5
+set cos 2
+class class-default 
+bandwidth percent 1
+set cos 1
+!
+policy-map eth.shaping.out 
+class class-default
+queue-limit 512 packets
+shape average 20000000 1000000 1000000
+service-policy rpvm.ce.cdsg.out
+!
+interface Loopback100
+description PARA MONITOREO-NMS
+ip address «DIRECCION_LOOPBACK_100» 255.255.255.255
+!
+interface FastEthernet2
+description CONEXION CON CAMARA DE VIGILANCIA
+no ip address 
+duplex full 
+speed 100
+spanning-tree portfast 
+no shut
+!
+interface FastEthernet3
+description CONEXION CON INTERCOM 
+no ip address
+duplex full 
+speed 100 
+spanning-tree portfast 
+no shut
+!
+interface FastEthernet4
+description CONEXION CON PLANTA DE FUERZA 
+no ip address
+duplex full 
+speed 10
+spanning-tree portfast 
+no shut
+!
+interface FastEthernet0
+description CONEXION CON DDE_CE 
+bandwidth 20000
+no ip address 
+load-interval 30 
+duplex full
+speed 100
+no shut
+!
+interface FastEthernet0.«VLAN_T»
+description CONEXION CON C2_TRABAJO.REF: «REFERENCIA_TRABAJO»_CNOC
+bandwidth 20000 
+encapsulation dot1Q «VLAN_T»
+ip address «DIRECCION_IP_VLAN_T» 255.255.255.252
+ip nbar protocol-discovery
+bfd interval 999 min_rx 999 multiplier 3 
+service-policy input eth.policing.in 
+service-policy output eth.shaping.out
+!
+interface FastEthernet0.«VLAN_R»
+description CONEXION CON C2_RESPALDO.REF: «REFERENCIA_RESPALDO»_CNOC
+bandwidth 20000 
+encapsulation dot1Q «VLAN_R»
+ip address «DIRECCION_IP_VLAN_R» 255.255.255.252
+ip nbar protocol-discovery
+bfd interval 999 min_rx 999 multiplier 3 
+service-policy input eth.policing.in 
+service-policy output eth.shaping.out
+!
+router bgp 65194
+bgp log-neighbor-changes
+network «DIRECCION_IPLAN» mask 255.255.255.240 
+network «DIRECCION_LOOPBACK_100» mask 255.255.255.255
+aggregate-address «DIRECCION_IPLAN» 255.255.255.224 summary-only
+neighbor «IP_ENLACE_TRABAJO_TELMEX» remote-as 8151 
+neighbor «IP_ENLACE_TRABAJO_TELMEX» send-community
+neighbor «IP_ENLACE_TRABAJO_TELMEX» prefix-list C2.PROCESAMIENTO in 
+neighbor «IP_ENLACE_TRABAJO_TELMEX» route-map TELMEX out
+neighbor «IP_ENLACE_TRABAJO_TELMEX» filter-list 10 out 
+neighbor «IP_ENLACE_TRABAJO_TELMEX» fall-over bfd
+neighbor «IP_ENLACE_TRABAJO_TELMEX» timers 10 30
+neighbor «IP_ENLACE_RESPALDO_TELMEX» remote-as 8151 
+neighbor «IP_ENLACE_RESPALDO_TELMEX» send-community
+neighbor «IP_ENLACE_RESPALDO_TELMEX» route-map C2.PROCESAMIENTO in 
+neighbor «IP_ENLACE_RESPALDO_TELMEX» route-map TELMEX2 out 
+neighbor «IP_ENLACE_RESPALDO_TELMEX» filter-list 10 out
+neighbor «IP_ENLACE_RESPALDO_TELMEX» fall-over bfd
+!
+ip bgp-community new-format
+ip as-path access-list 10 permit ^$
+!
+ip prefix-list C2.PROCESAMIENTO description PREFIJOS ENTRANTES
+ip prefix-list C2.PROCESAMIENTO seq 5 permit 10.24.0.0/16
+ip prefix-list C2.PROCESAMIENTO seq 10 permit 201.134.58.240/28
+ip prefix-list C2.PROCESAMIENTO seq 15 permit 201.134.236.160/27
+ip prefix-list C2.PROCESAMIENTO seq 20 permit 10.100.79.8/30 le 32
+ip prefix-list C2.PROCESAMIENTO seq 25 permit 10.100.79.4/30 le 32
+ip prefix-list C2.PROCESAMIENTO seq 30 permit 10.100.78.16/30 le 32
+ip prefix-list C2.PROCESAMIENTO seq 35 permit 10.100.78.12/30 le 32
+ip prefix-list C2.PROCESAMIENTO seq 40 permit 10.20.0.0/16
+ip prefix-list C2.PROCESAMIENTO seq 45 permit 10.199.1.238/32
+ip prefix-list C2.PROCESAMIENTO seq 50 permit 10.199.1.241/32
+!
+ip prefix-list PRIMARIAS description PREFIJOS PRIMARIOS
+ip prefix-list PRIMARIAS seq 5 permit «DIRECCION_IPLAN»/27 le 28
+ip prefix-list PRIMARIAS seq 20 permit «DIRECCION_LOOPBACK_100»/32
+!
+ip prefix-list SECUNDARIAS description PREFIJOS SECUNDARIOS
+ip prefix-list SECUNDARIAS seq 5 permit «DIRECCION_IPLAN»/27 le 28
+ip prefix-list SECUNDARIAS seq 20 permit «DIRECCION_LOOPBACK_100»/32
+!
+route-map C2.PROCESAMIENTO permit 10
+match ip address prefix-list C2.PROCESAMIENTO 
+set local-preference 98
+route-map TELMEX permit 10
+match ip address prefix-list PRIMARIAS 
+set community 8151:285
+!
+route-map TELMEX2 permit 10
+match ip address prefix-list SECUNDARIAS 
+set community 8151:286
+!
+!
+ip access-list extended MARK-CAMARA
+permit ip host «IP_CAM» 10.24.0.0 0.0.255.255
+!
+ip access-list extended MARK-INTERCOM
+permit ip host «IP_INT» any
+!
+ip sla responder
+no logging esm config 
+logging host 10.20.80.3
+!
+snmp-server group CDSEGURA v3 auth write bicentssp 
+snmp-server community $$PDF!RO& RO
+snmp-server community bicentssp RW 
+snmp-server community Cd$39ur4! RO
+snmp-server enable traps snmp authentication linkdown linkup coldstart warmstart 
+snmp-server enable traps envmon
+snmp-server enable traps config
+snmp-server host 10.24.7.133 bicentssp
+!
+control-plane
+!
+!
+mgcp behavior rsip-range tgcp-only 
+mgcp behavior comedia-role none
+mgcp behavior comedia-check-media-src disable 
+mgcp behavior comedia-sdp-force disable
+!
+mgcp profile default
+ !
+privilege exec level 7 show 
+logging privilege exec level 7 
+show
+!
+line con 0
+exec-timeout 30 
+0 login local
+line aux 0
+exec-timeout 30 
+0 login local
+line vty 0 4
+exec-timeout 30 
+0 login local
+transport input telnet 
+ssh line vty 5 15
+login local
+transport input telnet ssh
+!
+scheduler allocate 20000 1000
+ntp source vlan1
+ntp server 10.24.6.1 prefer
+
+!
+end
