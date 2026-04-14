@@ -25,9 +25,12 @@ const btnLabel = submitBtn.querySelector(".btn-label");
 const statusMessage = document.getElementById("status-message");
 const dataIssuesPanel = document.getElementById("data-issues");
 const dataIssuesList = document.getElementById("data-issues-list");
+const toastContainer = document.getElementById("toast-container");
 
 const toggleBtn = document.getElementById("toggle-mass");
 const massPanel = document.getElementById("mass-panel");
+const modeloMasivoSelect = document.getElementById("modelo-masivo");
+const c2MasivoSelect = document.getElementById("c2-masivo");
 const txtLista = document.getElementById("lista-ids");
 const massSummary = document.getElementById("mass-summary");
 const massDetail = document.getElementById("mass-detail");
@@ -55,6 +58,34 @@ function setStatus(element, message, type = "info") {
 function hideStatus(element) {
     element.textContent = "";
     element.className = "status-box";
+}
+
+function showToast(message, type = "success") {
+    const toast = document.createElement("div");
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `
+        <span class="toast-icon" aria-hidden="true">
+            ${
+                type === "success"
+                    ? '<svg viewBox="0 0 24 24" focusable="false"><path d="M9.55 18.2L3.85 12.5l1.41-1.41l4.29 4.29l9.19-9.19l1.41 1.41z"/></svg>'
+                    : '<svg viewBox="0 0 24 24" focusable="false"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2m1 15h-2v-2h2zm0-4h-2V7h2z"/></svg>'
+            }
+        </span>
+        <span class="toast-message">${message}</span>
+    `;
+
+    toastContainer.appendChild(toast);
+
+    requestAnimationFrame(() => {
+        toast.classList.add("visible");
+    });
+
+    setTimeout(() => {
+        toast.classList.remove("visible");
+        setTimeout(() => {
+            toast.remove();
+        }, 250);
+    }, 2600);
 }
 
 function setFieldFeedback(message, type = "info") {
@@ -358,9 +389,11 @@ function validarIdIndividual() {
 
 function actualizarResumenMasivo() {
     const ids = deduplicarPreservandoOrden(obtenerIdsDesdeTexto(txtLista.value));
+    const modelo = modeloMasivoSelect.value || "sin modelo";
+    const c2 = c2MasivoSelect.value || "sin C2";
 
     if (ids.length === 0) {
-        massSummary.textContent = "Aun no has pegado IDs.";
+        massSummary.textContent = "Selecciona Modelo, C2 y pega IDs para preparar el modo masivo.";
         massDetail.textContent = "Acepta IDs separados por comas, espacios, saltos de linea o pegado desde Excel.";
         return;
     }
@@ -375,9 +408,6 @@ function actualizarResumenMasivo() {
             noEncontrados.push(id);
         }
     });
-
-    const modelo = modeloSelect.value || "sin modelo";
-    const c2 = c2Select.value || "sin C2";
 
     massSummary.textContent = `IDs unicos detectados: ${ids.length}. Validos: ${encontrados}. No encontrados: ${noEncontrados.length}. Se usara ${modelo} / ${c2}.`;
 
@@ -491,7 +521,8 @@ async function generarArchivoIndividual(event) {
 
         const blob = new Blob([configFinal], { type: "text/plain;charset=utf-8" });
         dispararDescarga(blob, `${id}_${c2}.${obtenerExtension(modelo)}`);
-        setStatus(statusMessage, "Archivo generado correctamente.", "success");
+        hideStatus(statusMessage);
+        showToast("Plantilla generada correctamente.", "success");
     } catch (error) {
         console.error(error);
         setStatus(statusMessage, `Error al generar: ${error.message}`, "error");
@@ -518,11 +549,11 @@ async function generarMasivo() {
         return;
     }
 
-    const modelo = modeloSelect.value;
-    const c2 = c2Select.value;
+    const modelo = modeloMasivoSelect.value;
+    const c2 = c2MasivoSelect.value;
 
     if (!modelo || !c2) {
-        setStatus(statusMass, "Selecciona el Modelo y el C2 antes de generar el ZIP.", "warning");
+        setStatus(statusMass, "Selecciona el Modelo y el C2 dentro del panel masivo antes de generar el ZIP.", "warning");
         return;
     }
 
@@ -691,7 +722,7 @@ document.addEventListener("click", (event) => {
         ocultarSugerenciasIds();
     }
 });
-modeloSelect.addEventListener("change", actualizarResumenMasivo);
-c2Select.addEventListener("change", actualizarResumenMasivo);
+modeloMasivoSelect.addEventListener("change", actualizarResumenMasivo);
+c2MasivoSelect.addEventListener("change", actualizarResumenMasivo);
 
 document.addEventListener("DOMContentLoaded", cargarBaseDeDatos);

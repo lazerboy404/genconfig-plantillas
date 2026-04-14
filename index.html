@@ -102,19 +102,38 @@
                             <path d="M13 2L4 14h6l-1 8l9-12h-6z"/>
                         </svg>
                     </span>
-                    <span>Modo Masivo Por IDs (ZIP)</span>
+                    <span>Modo Masivo</span>
                 </div>
-                <p class="mass-instructions">
-                    1. Selecciona arriba el Modelo y el C2.<br>
-                    2. Pega varios ID_TMX abajo.<br>
-                    3. Se generara un ZIP con una plantilla por cada ID usando ese mismo C2.
-                </p>
+
+                <div class="form-group">
+                    <div class="field-row">
+                        <div class="field-block">
+                            <label for="modelo-masivo" class="sub-label">Modelo masivo:</label>
+                            <select id="modelo-masivo" class="form-control">
+                                <option value="" selected disabled>Selecciona modelo</option>
+                                <option value="Huawei">Huawei</option>
+                                <option value="Cisco">Cisco</option>
+                            </select>
+                        </div>
+                        <div class="field-block">
+                            <label for="c2-masivo" class="sub-label">C2 masivo:</label>
+                            <select id="c2-masivo" class="form-control">
+                                <option value="" selected disabled>Selecciona C2</option>
+                                <option value="Sur">Sur</option>
+                                <option value="Norte">Norte</option>
+                                <option value="Poniente">Poniente</option>
+                                <option value="Oriente">Oriente</option>
+                                <option value="Centro">Centro</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="form-group">
                     <textarea id="lista-ids" class="form-control" placeholder="Pega aqui los ID_TMX. Acepta comas, tabulaciones, espacios y saltos de linea desde Excel."></textarea>
                 </div>
 
-                <p id="mass-summary" class="helper-text">Aun no has pegado IDs.</p>
+                <p id="mass-summary" class="helper-text">Selecciona Modelo, C2 y pega IDs para preparar el modo masivo.</p>
                 <p id="mass-detail" class="helper-text">Acepta IDs separados por comas, espacios, saltos de linea o pegado desde Excel.</p>
 
                 <div class="btn-mass-group">
@@ -145,5 +164,7 @@
             </div>
         </form>
     </div>
+
+    <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 </body>
 </html>
