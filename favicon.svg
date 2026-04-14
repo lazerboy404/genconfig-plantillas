@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0c29"/>
+      <stop offset="100%" stop-color="#302b63"/>
+    </linearGradient>
+    <linearGradient id="helmet" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffd54a"/>
+      <stop offset="100%" stop-color="#ffb300"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
+  <circle cx="32" cy="38" r="13" fill="#f2c9a5"/>
+  <path d="M18 32c0-8.3 6.2-15 14-15s14 6.7 14 15v4H18z" fill="url(#helmet)"/>
+  <path d="M24 25c0-4.4 3.6-8 8-8s8 3.6 8 8" fill="none" stroke="#fff0a8" stroke-width="3" stroke-linecap="round"/>
+  <path d="M17 35h30" stroke="#5c4200" stroke-width="3" stroke-linecap="round"/>
+  <rect x="29" y="19" width="6" height="12" rx="2" fill="#5c4200"/>
+  <circle cx="27" cy="38" r="1.8" fill="#263238"/>
+  <circle cx="37" cy="38" r="1.8" fill="#263238"/>
+  <path d="M27 45c2.8 2.2 7.2 2.2 10 0" fill="none" stroke="#9c6644" stroke-width="2.5" stroke-linecap="round"/>
+</svg>
