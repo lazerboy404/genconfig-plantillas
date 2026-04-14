@@ -85,7 +85,7 @@ function showToast(message, type = "success") {
         setTimeout(() => {
             toast.remove();
         }, 250);
-    }, 2600);
+    }, 4500);
 }
 
 function setFieldFeedback(message, type = "info") {

@@ -461,7 +461,7 @@ textarea.form-control {
 
 .toast-container {
     position: fixed;
-    top: 18px;
+    bottom: 18px;
     right: 18px;
     z-index: 999;
     display: flex;
@@ -592,7 +592,7 @@ textarea.form-control {
     }
 
     .toast-container {
-        top: 12px;
+        bottom: 12px;
         right: 12px;
         left: 12px;
     }
